@@ -6,25 +6,28 @@
 package minesweeper;
 
 import java.util.Random;
+import java.util.Stack;
 
 /**
  *
  * @author ruben
  */
 public class Board {
-    private int cols, rows, mines, flaggedMines, visitedCells;
+    private int cols, rows, mines, flaggedMines, markedCells;
     private Cell[][] cells;
+    private Stack updatedCells;
     
     public Board(int r, int c, int m){
         //Initialize attributes
-        this.rows = r;
-        this.cols = c;
-        this.mines = m;
-        this.cells = new Cell[r][c];
+        rows = r;
+        cols = c;
+        mines = m;
+        cells = new Cell[r][c];
+        
                 
         for(int i=0; i<r; i++)
             for(int j=0; j<c; j++)
-                this.cells[i][j] = new Cell();
+                cells[i][j] = new Cell();
         
         //Place mines randomly on board
         int mineCount = 0;
@@ -34,9 +37,9 @@ public class Board {
             int newRow, newCol;
             //Calculate new valid coordinate for mine
             do{
-                newRow = rand.nextInt(this.rows);
-                newCol = rand.nextInt(this.cols);
-            }while(this.cells[newRow][newCol].hasMine()); //Repeat if coordinate already has a mine on it
+                newRow = rand.nextInt(rows);
+                newCol = rand.nextInt(cols);
+            }while(cellHasMine(newRow, newCol)); //Repeat if coordinate already has a mine on it
             
             placeMine(newRow, newCol);
             mineCount++;
@@ -49,35 +52,29 @@ public class Board {
         
         for(int i=0; i<rows; i++){
             for(int j=0; j<cols; j++)
-                values[i][j] = this.cells[i][j].value;
+                values[i][j] = cells[i][j].value;
         }
         return values;
     }
     
-    public int[][] getCellStates(){
-        //Return current cell states. 0 = unvisited, 1 = flagged, 2 = visited
-        int[][] values = new int[rows][cols];
+    public CellState[][] getCellStates(){
+        CellState[][] values = new CellState[rows][cols];
         
         for(int i=0; i<rows; i++){
             for(int j=0; j<cols; j++){
-                int v;
-                
-                if(this.cells[i][j].isVisited) v = 2;
-                else if(this.cells[i][j].isFlagged) v = 1;
-                else v = 0;  
-                
-                values[i][j] = v;
+                values[i][j] = cells[i][j].state;
             }
         }                
         
         return values;
     }
     
-    public int getFlaggedMineCount(){ return flaggedMines; }
-    public int getVisitedCellCount(){ return visitedCells; }
-    
+    public CellState getCellState(int r, int c){
+        return this.cells[r][c].state;
+    }
+        
     private void placeMine(int r, int c){
-            this.cells[r][c].placeMine();
+            cells[r][c].placeMine();
             updateCell(r-1, c-1);
             updateCell(r-1, c);
             updateCell(r-1, c+1);
@@ -90,92 +87,113 @@ public class Board {
     
     private void updateCell(int r, int c){
         if(coordIsValid(r,c) && !cellHasMine(r,c))
-            this.cells[r][c].update();
+            cells[r][c].update();
     }
     
-    public int visitCell(int row, int col) {
+    public int markCell(int row, int col) {
         
         if(!coordIsValid(row, col) || cellIsFlagged(row,col))
             return 0;
         
-                
-        if(this.cells[row][col].value != 0 || this.cells[row][col].isVisited){  
-            this.cells[row][col].visit();  
-            this.visitedCells++;
-                if(cellHasMine(row,col)){
-                    visitAll();
-                    return -1;
-                }
-            return 0;
-        }      
+        if(cellHasMine(row,col)){
+            showMines();
+            return -1;
+        }
         
-        this.cells[row][col].visit();
-        this.visitedCells++;
-        return  visitCell(row-1, col)+     //west
-                visitCell(row, col-1)+     //north
-                visitCell(row, col+1)+     //south
-                visitCell(row+1, col)+     //east
-                visitCell(row-1, col-1)+   //northeast
-                visitCell(row+1, col-1)+   //northwest
-                visitCell(row-1, col+1)+   //southeast
-                visitCell(row+1, col+1);   //southwest
+        if(cells[row][col].isMarked)
+            return 0;
+        
+        cells[row][col].mark();  
+        markedCells++; 
+        
+        if(cells[row][col].value != 0)
+            return 0;
+        
+        return  markCell(row-1, col)+     //west
+                markCell(row, col-1)+     //north
+                markCell(row, col+1)+     //south
+                markCell(row+1, col)+     //east
+                markCell(row-1, col-1)+   //northeast
+                markCell(row+1, col-1)+   //northwest
+                markCell(row-1, col+1)+   //southeast
+                markCell(row+1, col+1);   //southwest
     }
     
     public void flagCell(int row, int col){
-        if(coordIsValid(row, col) && !this.cells[row][col].isVisited){
-            this.cells[row][col].flag();
-            if(this.cells[row][col].hasMine())
-                this.flaggedMines++;
+        if(coordIsValid(row, col) && !cells[row][col].isMarked){
+            cells[row][col].flag();
+            if(cells[row][col].hasMine())
+                flaggedMines++;
         }
     }
     
+    private void showMines(){
+        for(int i=0; i<rows; i++){
+            for(int j=0; j<cols; j++){
+                if(cellHasMine(i, j) && (!cells[i][j].isMarked) && (!cells[i][j].isFlagged)) cells[i][j].mark();
+            }
+        }
+    }
+    
+    //Boolean functions   
     private boolean coordIsValid(int r, int c){
-        return (r >= 0 && r < this.rows) && (c >= 0 && c < this.cols); 
+        return (r >= 0 && r < rows) && (c >= 0 && c < cols); 
+    }
+    
+    private boolean cellIsMarked(int r, int c){
+        return cells[r][c].state == CellState.MARKED;
     }
     
     private boolean cellHasMine(int r, int c){
-        return this.cells[r][c].hasMine();
+        return cells[r][c].hasMine();
     }
     
     private boolean cellIsFlagged(int r, int c){
-        return this.cells[r][c].isFlagged;
+        return cells[r][c].state == CellState.FLAGGED;
     }
     
-    private void visitAll(){
-        for(int i=0; i<rows; i++)
-            for(int j=0; j<cols; j++)
-                this.cells[i][j].visit();
-    }
-    
-    
+     
     private class Cell {
-        boolean isFlagged, isVisited;  
-        int value;
+        private boolean isMarked, isFlagged;
+        private CellState state;
+        private int value;
     
         public Cell(){
             value = 0;
-            isFlagged = false;
-            isVisited = false;
+            state = CellState.NONE;
         }
         
         void placeMine(){
-            this.value = -1;
+            value = -1;
         }
         
         boolean hasMine(){
-            return this.value == -1;
+            return value == -1;
         }
         
         void update(){
-            this.value++;
+            value++;
         }
         
-        void visit(){
-            this.isVisited = true;
+        void mark(){
+            isMarked = true;
+            isFlagged = false;
+            state = CellState.MARKED;
         }
         
         void flag(){
-            this.isFlagged = !isFlagged;
+            isFlagged = !isFlagged;
+            if(isFlagged)
+                state = (value != -1) ? CellState.WRONG_FLAG : CellState.FLAGGED;
+            else
+                state = CellState.NONE;
         }      
+    }
+    
+    public enum CellState{
+        MARKED,
+        FLAGGED,
+        WRONG_FLAG,
+        NONE
     }
 }
