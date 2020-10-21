@@ -5,131 +5,89 @@
  */
 package minesweeper;
 
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
-import minesweeper.Board.CellState;
-import minesweeper.Window.CellContainer;
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 /**
  *
  * @author ruben
  */
 
-public class Game implements MouseListener{
+public class Game extends JFrame implements ActionListener{
 
     private String difficulty;
-    private Board board;
-    private Window window;
-    private boolean gameOver;
+    private BoardData data;
+    private BoardWindow board;
+    private JButton reset;
+    
+    int c, r, m;
     
     public Game(int c, int r, int m){
-        board = new Board(c, r, m);   
-        window = new Window(board.getBoard(), m, this);
+        super("Minesweeper");
+        this.initGame(c, r, m);
+        this.initWindow();
     }
     
     public Game(String difficulty){
-        
+        super("Minesweeper");
+                
         switch(difficulty){
             case "easy":
-                board = new Board(9, 9, 10);
-                window = new Window(board.getBoard(), 9, this);
+                this.initGame(9, 9, 10);                
             break;
             
             case "medium":
-                board = new Board(16, 16, 40);
-                window = new Window(board.getBoard(), 16, this);
+                this.initGame(16, 16, 40);
             break;
             
             case "hard":
-                board = new Board(16, 30, 99);
-                window = new Window(board.getBoard(), 99, this);
+                this.initGame(16, 30, 99);
             break;
             
             default:
-                System.out.println("Invalid entry.");
+                JOptionPane.showMessageDialog(null, "Invalid Entry");
             break;
         } 
         
-        printBoard();
+        initWindow();
+    } 
+      
+    private void initGame(int c, int r, int m){
+        this.c = c; this.r = r; this.m = m;        
+        data = new BoardData(c, r, m);        
     }
     
-    
-    
-    private void printBoard(){
-        int[][] values = board.getBoard();
-        CellState[][] states = board.getCellStates();
+    private void initWindow(){ 
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setResizable(false);
         
-        for(int i=0; i<values.length; i++){
-            String line = "";
-            String boardLine = "";
-            
-            for(int j=0; j<values[i].length; j++){ 
-                if(states[i][j] == CellState.MARKED)                    
-                    line += (values[i][j] == -1 ? "*" : values[i][j]) + " ";
-                else{
-                    if(states[i][j] == CellState.FLAGGED)
-                        line += "F ";
-                    else if(states[i][j] == CellState.WRONG_FLAG)
-                        line += "W ";
-                    else
-                        line += "X ";
-                }
-                    
-                
-                boardLine += (values[i][j] == -1 ? "*" : values[i][j]) + " "; 
-            }
-            
-            System.out.println(line + "\t" + boardLine);
-        }
-    }
-    
-    
-    @Override
-    public void mouseClicked(MouseEvent e) {}
+        board = new BoardWindow(data);
+        reset = new JButton("Reset");
+        reset.addActionListener(this);
+        
+        
+        this.add(reset, BorderLayout.NORTH);
+        this.add(board, BorderLayout.SOUTH);
+        this.pack();
+        
+        this.setVisible(true);
+    }      
 
     @Override
-    public void mousePressed(MouseEvent e) {
-        
-        if(!gameOver){
-            CellContainer source = (CellContainer) e.getSource();
-            int row = source.getRowIndex();
-            int col = source.getColIndex();
-
-
-            if(SwingUtilities.isLeftMouseButton(e)){
-                if(board.markCell(row, col) == -1)
-                    gameOver = true;
-            }
-
-            if(SwingUtilities.isRightMouseButton(e)){
-                board.flagCell(row, col);
-            }
-
-            System.out.println("Ready for next move");
-            printBoard();
-        }
-        
-        window.update(board.getCellStates(),gameOver);
-
-        
+    public void actionPerformed(ActionEvent e) {
+        initGame(c, r, m);
+        board.reset(data);
+        pack();
     }
 
-    @Override
-    public void mouseReleased(MouseEvent e) {}
-
-    @Override
-    public void mouseEntered(MouseEvent e) {}
-
-    @Override
-    public void mouseExited(MouseEvent e) {}
-
+    
+    
+    
+    
 }
 
 

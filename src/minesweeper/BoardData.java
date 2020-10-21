@@ -12,12 +12,12 @@ import java.util.Stack;
  *
  * @author ruben
  */
-public class Board {
-    private int cols, rows, mines, flaggedMines, markedCells;
+public class BoardData {
+    private int cols, rows, mines, flaggedMines, markedCells, flaggedCells;
     private Cell[][] cells;
-    private Stack updatedCells;
     
-    public Board(int r, int c, int m){
+    
+    public BoardData(int r, int c, int m){
         //Initialize attributes
         rows = r;
         cols = c;
@@ -56,6 +56,15 @@ public class Board {
         }
         return values;
     }
+    
+    public int getFlaggedMines(){ return flaggedMines;}
+    private boolean allMinesFlagged(){ return flaggedMines == mines; }
+    
+    private boolean allCellsMarked(){ return markedCells == (cols * rows) - mines; }
+    
+    public boolean boardIsClear(){ return allMinesFlagged() && allCellsMarked(); }
+    
+    public int flaggedCells(){ return flaggedCells; }
     
     public CellState[][] getCellStates(){
         CellState[][] values = new CellState[rows][cols];
@@ -121,9 +130,13 @@ public class Board {
     
     public void flagCell(int row, int col){
         if(coordIsValid(row, col) && !cells[row][col].isMarked){
-            cells[row][col].flag();
+            cells[row][col].flag();            
+            
             if(cells[row][col].hasMine())
-                flaggedMines++;
+                flaggedMines += cells[row][col].isFlagged ? 1 : -1;
+
+            flaggedCells += cells[row][col].isFlagged ? 1 : -1;
+            
         }
     }
     
@@ -149,7 +162,7 @@ public class Board {
     }
     
     private boolean cellIsFlagged(int r, int c){
-        return cells[r][c].state == CellState.FLAGGED;
+        return (cells[r][c].state == CellState.FLAGGED || cells[r][c].state == CellState.WRONG_FLAG);
     }
     
      

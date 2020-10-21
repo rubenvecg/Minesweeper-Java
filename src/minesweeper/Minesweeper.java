@@ -18,8 +18,7 @@ public class Minesweeper {
      */
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
-        Game g = new Game("easy");
-        
+        Game g = new Game(10, 10, 5);        
     }
     
 }
