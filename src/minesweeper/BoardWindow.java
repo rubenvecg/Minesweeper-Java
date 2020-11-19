@@ -6,7 +6,6 @@
 package minesweeper;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -18,7 +17,7 @@ import minesweeper.BoardData.CellState;
  *
  * @author ruben
  */
-public class BoardWindow extends JPanel  implements MouseListener{
+public class BoardWindow extends JPanel implements MouseListener{
     
     private CellContainer[][] buttons;
     private int flags;
@@ -26,44 +25,53 @@ public class BoardWindow extends JPanel  implements MouseListener{
     private BoardData data;
     private boolean gameOver;
     
-        
     public BoardWindow(BoardData data){
         super(); 
         this.data = data;
-        initBoard();       
+        initLayout();
     } 
     
     public void reset(BoardData data){        
         this.data = data;
         gameOver = false;
-        initBoard(); 
-        System.out.println("");
-        printBoard();
+        initLayout();
     }
     
-    private void initBoard(){      
-              
-        int[][] values = data.getBoard();
-        this.rowCount = values.length;
-        this.colCount = values[0].length;
+    private void initLayout(){
+        rowCount = data.getRows();
+        colCount = data.getCols();
         
         removeAll();
-        setLayout(new GridLayout(rowCount, colCount));
-              
+        setLayout(new GridLayout(rowCount, colCount));              
         buttons = new CellContainer[rowCount][colCount];
+        
+        for(int i=0; i<rowCount; i++){
+            for(int j=0; j<colCount; j++){ 
+                buttons[i][j] = new CellContainer(i, j, this);
+                add(buttons[i][j]);
+            }
+        }
+    }
+    
+    private void fillBoard(int r0, int c0){ 
+        data.fillBoard(r0, c0);
+        int[][] values = data.getBoard();        
                         
         for(int i=0; i<rowCount; i++){
-            for(int j=0; j<colCount; j++){
-                
+            for(int j=0; j<colCount; j++){                
                 String cellValue = "";
-                if(values[i][j] != 0) cellValue = (values[i][j] == -1 ? "*" : values[i][j] + ""); 
+                                        
+                if(values[i][j] == -1) cellValue = "*";
+                else{
+                    cellValue = (values[i][j] == 0 ) ? "" : values[i][j]+"";                    
+                }
                 
-                buttons[i][j] = new CellContainer(cellValue, i, j, this); 
-                add(buttons[i][j]);
+                buttons[i][j].changeValue(cellValue);
             }
         }        
     }
     
+      
     public void update(CellState[][] states, boolean gameOver){         
         
         for(int i=0; i<states.length; i++){
@@ -81,30 +89,32 @@ public class BoardWindow extends JPanel  implements MouseListener{
                         else{
                             if(state == CellState.FLAGGED)
                                 buttons[i][j].flag();
-                            else
+                            if(state == CellState.WRONG_FLAG)
                                 buttons[i][j].wrongFlag();
+                            if(state == CellState.MINE_PICKED)
+                                buttons[i][j].explode();
                         }
                     }
                 }              
             }
         }
               
-    }
-    
-    
+    }  
         
     @Override
     public void mouseClicked(MouseEvent e) {}
 
     @Override
     public void mousePressed(MouseEvent e) {
+        CellContainer source = (CellContainer) e.getSource();
+        int row = source.getRowIndex();
+        int col = source.getColIndex();
+        
+        if(data.isEmpty())
+            fillBoard(row, col);
         
         if(!gameOver){
-            CellContainer source = (CellContainer) e.getSource();
-            int row = source.getRowIndex();
-            int col = source.getColIndex();
-
-
+            
             if(SwingUtilities.isLeftMouseButton(e)){
                 if(data.markCell(row, col) == -1){
                     gameOver = true;                    
@@ -119,8 +129,9 @@ public class BoardWindow extends JPanel  implements MouseListener{
         
         this.update(data.getCellStates(), gameOver);
         if(data.boardIsClear()) JOptionPane.showMessageDialog(this, "Good job!");
-        
+        printBoard();
     }
+
 
     @Override
     public void mouseReleased(MouseEvent e) {}
@@ -137,50 +148,69 @@ public class BoardWindow extends JPanel  implements MouseListener{
         private JLabel valueLabel;
         private int rowIndex, colIndex;
         private boolean flagged = false; 
+        private Color hiddenColor, revealedColor, revealedTextColor, wrongFlagColor, borderColor;
         
-        public CellContainer(String v, int r, int c, MouseListener listener){
+        public CellContainer(int r, int c, MouseListener listener){
             super();
-            this.rowIndex = r;
-            this.colIndex = c;
+            rowIndex = r;
+            colIndex = c;
+            hiddenColor = new Color(97, 155, 138);
+            revealedColor = new Color(35, 61, 77);
+            revealedTextColor = new Color(230, 230, 230);
+            wrongFlagColor = new Color(254, 127, 45);
+            borderColor = revealedColor.darker();
             
-            value = v;
-            valueLabel = new JLabel(v);
+            valueLabel = new JLabel();
             valueLabel.setVisible(false);
-            valueLabel.setFont(new Font("Arial", 12, 12));
+            valueLabel.setFont(new Font("Arial", Font.BOLD, 12));
+            valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
             
-            this.setPreferredSize(new Dimension(30, 30));
-            this.setBackground(Color.blue);
-            this.setBorder(BorderFactory.createLineBorder(Color.white));
-            this.addMouseListener(listener);
-            this.add(valueLabel, BorderLayout.CENTER);
+            setLayout(new BorderLayout());
+            setPreferredSize(new Dimension(30, 30));
+            setBackground(hiddenColor);
+            setBorder(BorderFactory.createLineBorder(borderColor));
+            addMouseListener(listener);
+            add(valueLabel, BorderLayout.CENTER);
+        }
+        
+        private void changeValue(String newValue){
+            value = newValue;
+            valueLabel.setText(value);
         }
         
         public int getRowIndex(){ return rowIndex; }
         public int getColIndex(){ return colIndex; }
         
         public void reset(){
-            this.setBackground(Color.blue);
+            this.setBackground(hiddenColor);
             valueLabel.setVisible(false);
-            valueLabel.setForeground(Color.black);
             valueLabel.setText(this.value);
         }
         
         public void show(){
-            this.setBackground(Color.gray);
-            valueLabel.setVisible(true);             
+            this.setBackground(revealedColor);
+            valueLabel.setVisible(true);   
+            valueLabel.setForeground(revealedTextColor);
         }   
         
         public void flag(){                 
-            valueLabel.setText("~");
-            valueLabel.setForeground(Color.red);            
+            valueLabel.setText("^");
             valueLabel.setVisible(true);
         }
         
         public void wrongFlag(){
             valueLabel.setText("X");
-            this.setBackground(Color.red);
             valueLabel.setForeground(Color.black);
+            valueLabel.setVisible(true);
+            this.setBackground(wrongFlagColor);            
         }
+        
+        public void explode(){
+            valueLabel.setText("*");
+            valueLabel.setForeground(Color.black);
+            valueLabel.setVisible(true);
+            this.setBackground(wrongFlagColor);
+        }        
     }
     
     
@@ -211,5 +241,7 @@ public class BoardWindow extends JPanel  implements MouseListener{
             
             System.out.println(line + "\t" + boardLine);
         }
+        
+        System.out.println("");
     }
 }

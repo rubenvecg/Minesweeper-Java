@@ -6,30 +6,35 @@
 package minesweeper;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
+import javax.swing.*;
+import minesweeper.BoardData.FlagListener;
+
 
 /**
  *
  * @author ruben
  */
 
-public class Game extends JFrame implements ActionListener{
+public class Game extends JFrame implements ActionListener, FlagListener{
 
     private String difficulty;
     private BoardData data;
     private BoardWindow board;
     private JButton reset;
+    private JLabel flagCount;
+    private Color bgColor, textColor;
     
     int c, r, m;
     
     public Game(int c, int r, int m){
         super("Minesweeper");
+              
         this.initGame(c, r, m);
         this.initWindow();
+        
     }
     
     public Game(String difficulty){
@@ -58,20 +63,39 @@ public class Game extends JFrame implements ActionListener{
       
     private void initGame(int c, int r, int m){
         this.c = c; this.r = r; this.m = m;        
-        data = new BoardData(c, r, m);        
+        data = new BoardData(c, r, m); 
+        data.addFlagListener(this);
     }
     
     private void initWindow(){ 
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setResizable(false);
         
+        bgColor = new Color(35, 61, 77);
+        textColor = Color.white;
+        
         board = new BoardWindow(data);
+        
+        JPanel resetPanel = new JPanel();
+        resetPanel.setOpaque(true);
+        resetPanel.setBackground(bgColor);
+        
+        
         reset = new JButton("Reset");
         reset.addActionListener(this);
+        resetPanel.add(reset);
         
+        JPanel flagPanel = new JPanel();
+        flagPanel.setBackground(bgColor);
+        flagCount = new JLabel("Flags: " + m);
+        flagCount.setHorizontalAlignment(SwingConstants.CENTER);        
+        flagCount.setForeground(textColor);
+        flagPanel.add(flagCount);
         
-        this.add(reset, BorderLayout.NORTH);
-        this.add(board, BorderLayout.SOUTH);
+               
+        this.add(resetPanel, BorderLayout.NORTH);
+        this.add(board, BorderLayout.CENTER);
+        this.add(flagPanel, BorderLayout.SOUTH);
         this.pack();
         
         this.setVisible(true);
@@ -79,15 +103,16 @@ public class Game extends JFrame implements ActionListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        initGame(c, r, m);
+        initGame(c, r, m);        
         board.reset(data);
+        flagCount.setText("Flags: " + m);
         pack();
     }
 
-    
-    
-    
-    
+    @Override
+    public void onValueChange() {
+        flagCount.setText("Flags: " + (m - data.flaggedCells()));
+    }
 }
 
 

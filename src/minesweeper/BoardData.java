@@ -6,7 +6,6 @@
 package minesweeper;
 
 import java.util.Random;
-import java.util.Stack;
 
 /**
  *
@@ -15,6 +14,8 @@ import java.util.Stack;
 public class BoardData {
     private int cols, rows, mines, flaggedMines, markedCells, flaggedCells;
     private Cell[][] cells;
+    private FlagListener listener;
+    private boolean boardIsEmpty;
     
     
     public BoardData(int r, int c, int m){
@@ -23,12 +24,19 @@ public class BoardData {
         cols = c;
         mines = m;
         cells = new Cell[r][c];
+        boardIsEmpty = true;
         
                 
         for(int i=0; i<r; i++)
             for(int j=0; j<c; j++)
-                cells[i][j] = new Cell();
-        
+                cells[i][j] = new Cell();      
+    }
+    
+    public int getRows(){ return rows; }
+    
+    public int getCols(){ return cols; }
+    
+    public void fillBoard(int r0, int c0){
         //Place mines randomly on board
         int mineCount = 0;
         Random rand = new Random();
@@ -39,11 +47,19 @@ public class BoardData {
             do{
                 newRow = rand.nextInt(rows);
                 newCol = rand.nextInt(cols);
-            }while(cellHasMine(newRow, newCol)); //Repeat if coordinate already has a mine on it
+            //Repeat if coordinate already has a mine or is the same as the starting point
+            }while(cannotPlaceHere(newRow, newCol, r0, c0));
             
             placeMine(newRow, newCol);
             mineCount++;
         }
+        
+        boardIsEmpty = false;
+    }
+    
+    private boolean cannotPlaceHere(int row, int col, int r0, int c0){
+        return cellHasMine(row, col);/* && 
+               (Math.abs(row-r0) > 1 && Math.abs(col-c0) > 1);*/
     }
     
     public int[][] getBoard(){
@@ -58,9 +74,12 @@ public class BoardData {
     }
     
     public int getFlaggedMines(){ return flaggedMines;}
+    
     private boolean allMinesFlagged(){ return flaggedMines == mines; }
     
     private boolean allCellsMarked(){ return markedCells == (cols * rows) - mines; }
+    
+    public boolean isEmpty(){ return boardIsEmpty; }
     
     public boolean boardIsClear(){ return allMinesFlagged() && allCellsMarked(); }
     
@@ -106,7 +125,8 @@ public class BoardData {
         
         if(cellHasMine(row,col)){
             showMines();
-            return -1;
+            cells[row][col].explode();
+            return -1;            
         }
         
         if(cells[row][col].isMarked)
@@ -136,7 +156,7 @@ public class BoardData {
                 flaggedMines += cells[row][col].isFlagged ? 1 : -1;
 
             flaggedCells += cells[row][col].isFlagged ? 1 : -1;
-            
+            listener.onValueChange();
         }
     }
     
@@ -200,13 +220,32 @@ public class BoardData {
                 state = (value != -1) ? CellState.WRONG_FLAG : CellState.FLAGGED;
             else
                 state = CellState.NONE;
-        }      
+        }   
+        
+        void explode(){
+            state = CellState.MINE_PICKED;
+        }
     }
     
     public enum CellState{
         MARKED,
         FLAGGED,
         WRONG_FLAG,
+        MINE_PICKED,
         NONE
     }
+    
+    public interface FlagListener{
+        public void onValueChange();
+    } 
+    
+    public interface CellValueListener{
+        
+    }
+
+    public void addFlagListener(FlagListener l){
+        listener = l;       
+    }
+    
+    
 }

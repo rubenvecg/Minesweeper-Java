@@ -3,8 +3,8 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/D:/Documents/Portfolio/minesweeper/src/minesweeper/Board.java</file>
             <file>file:/D:/Documents/Portfolio/minesweeper/src/minesweeper/BoardWindow.java</file>
+            <file>file:/D:/Documents/Portfolio/minesweeper/src/minesweeper/BoardData.java</file>
             <file>file:/D:/Documents/Portfolio/minesweeper/src/minesweeper/Game.java</file>
             <file>file:/D:/Documents/Portfolio/minesweeper/src/minesweeper/Minesweeper.java</file>
         </group>
