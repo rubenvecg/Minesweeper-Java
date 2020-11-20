@@ -1,1 +1,10 @@
+build.xml
+manifest.mf
+*.rar
+*.zip
+
+#Build folders
 /dist/
+/build/
+/nbproject/
+/test/

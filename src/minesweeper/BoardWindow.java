@@ -129,9 +129,8 @@ public class BoardWindow extends JPanel implements MouseListener{
         
         this.update(data.getCellStates(), gameOver);
         if(data.boardIsClear()) JOptionPane.showMessageDialog(this, "Good job!");
-        printBoard();
+        
     }
-
 
     @Override
     public void mouseReleased(MouseEvent e) {}
@@ -148,7 +147,8 @@ public class BoardWindow extends JPanel implements MouseListener{
         private JLabel valueLabel;
         private int rowIndex, colIndex;
         private boolean flagged = false; 
-        private Color hiddenColor, revealedColor, revealedTextColor, wrongFlagColor, borderColor;
+        private Color hiddenColor, revealedColor, revealedTextColor, 
+                      wrongFlagColor, borderColor;
         
         public CellContainer(int r, int c, MouseListener listener){
             super();

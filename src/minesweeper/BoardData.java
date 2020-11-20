@@ -58,8 +58,8 @@ public class BoardData {
     }
     
     private boolean cannotPlaceHere(int row, int col, int r0, int c0){
-        return cellHasMine(row, col);/* && 
-               (Math.abs(row-r0) > 1 && Math.abs(col-c0) > 1);*/
+        return cellHasMine(row, col) || 
+               (Math.abs(row-r0) <= 1 && Math.abs(col-c0) <= 1);
     }
     
     public int[][] getBoard(){

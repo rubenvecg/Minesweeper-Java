@@ -9,6 +9,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemListener;
 import javax.swing.*;
 import minesweeper.BoardData.FlagListener;
 
@@ -24,22 +25,21 @@ public class Game extends JFrame implements ActionListener, FlagListener{
     private BoardData data;
     private BoardWindow board;
     private JButton reset;
+    private JComboBox levelSelector;
     private JLabel flagCount;
     private Color bgColor, textColor;
     
     int c, r, m;
-    
-    public Game(int c, int r, int m){
-        super("Minesweeper");
-              
-        this.initGame(c, r, m);
-        this.initWindow();
-        
-    }
+    String[] options = new String[]{"Easy", "Medium", "Hard"};
     
     public Game(String difficulty){
         super("Minesweeper");
                 
+        if(initGame(difficulty.toLowerCase()))        
+            initWindow();
+    } 
+    
+    private boolean initGame(String difficulty){
         switch(difficulty){
             case "easy":
                 this.initGame(9, 9, 10);                
@@ -54,12 +54,12 @@ public class Game extends JFrame implements ActionListener, FlagListener{
             break;
             
             default:
-                JOptionPane.showMessageDialog(null, "Invalid Entry");
-            break;
-        } 
-        
-        initWindow();
-    } 
+                JOptionPane.showMessageDialog(null, "Invalid Entry. Program will close.");
+                System.exit(1);
+                return false;            
+        }        
+        return true;
+    }
       
     private void initGame(int c, int r, int m){
         this.c = c; this.r = r; this.m = m;        
@@ -76,24 +76,26 @@ public class Game extends JFrame implements ActionListener, FlagListener{
         
         board = new BoardWindow(data);
         
-        JPanel resetPanel = new JPanel();
-        resetPanel.setOpaque(true);
-        resetPanel.setBackground(bgColor);
+        JPanel optionsPanel = new JPanel();
+        optionsPanel.setOpaque(true);
+        optionsPanel.setBackground(bgColor);
         
+        levelSelector = new JComboBox(options);
+        levelSelector.setSelectedIndex(1);
+        optionsPanel.add(levelSelector);
         
         reset = new JButton("Reset");
         reset.addActionListener(this);
-        resetPanel.add(reset);
+        optionsPanel.add(reset);
         
         JPanel flagPanel = new JPanel();
         flagPanel.setBackground(bgColor);
         flagCount = new JLabel("Flags: " + m);
         flagCount.setHorizontalAlignment(SwingConstants.CENTER);        
         flagCount.setForeground(textColor);
-        flagPanel.add(flagCount);
-        
+        flagPanel.add(flagCount);        
                
-        this.add(resetPanel, BorderLayout.NORTH);
+        this.add(optionsPanel, BorderLayout.NORTH);
         this.add(board, BorderLayout.CENTER);
         this.add(flagPanel, BorderLayout.SOUTH);
         this.pack();
@@ -103,7 +105,7 @@ public class Game extends JFrame implements ActionListener, FlagListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        initGame(c, r, m);        
+        initGame(options[levelSelector.getSelectedIndex()].toLowerCase());        
         board.reset(data);
         flagCount.setText("Flags: " + m);
         pack();
@@ -113,6 +115,7 @@ public class Game extends JFrame implements ActionListener, FlagListener{
     public void onValueChange() {
         flagCount.setText("Flags: " + (m - data.flaggedCells()));
     }
+
 }
 
 
